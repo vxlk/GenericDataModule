@@ -7,6 +7,8 @@
 // requires "swaps" and "exchanges"
 template <class T>
 class ImmutableProperty : public Property<T> {
+	static constexpr auto key = "Immutable Property";
+	virtual [[nodiscard]] std::string typeName() const noexcept override { return ImmutableProperty::key; }
 	bool isMutable() const override   { return false; }
 	bool isChangable() const override { return true; }
 };

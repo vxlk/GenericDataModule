@@ -3,8 +3,42 @@
 
 #pragma once
 
+#include <IProperty.hpp>
+
 #include <variant>
 #include <string>
+#include <type_traits>
+
+// PropertyAble is a definition of a type that can fit into a property
+// object
+template<class T>
+concept PropertyAble = is_copy_assignable<T>::value && 
+					   is_copy_constructible<T>::value ||
+					   is_trivial<T>::value;
+
+template<typename T, typename... BaseClasses>
+class is_property_descendant {
+	// sanity check; see the updated demo below
+	static_assert(IsDerivedFrom<T, BaseClasses...>::value);
+
+	struct NonDerived : BaseClasses... { virtual ~NonDerived() = default; };
+	struct Derived : T { virtual ~Derived() = default; };
+
+public:
+	inline static constexpr bool value = (sizeof(NonDerived) == sizeof(Derived));
+};
+
+// todo:
+class has_property_key {
+public:
+	inline static constexpr bool value = true;
+};
+// { std::hash<T>{}(a) } -> std::convertible_to<std::size_t>;
+/*
+std::negation<is_array<T>> &&
+std::is_destructible<T> &&
+is_object<T>;
+*/
 
 // A "Property" does 3 things:
 // 1. Provide a <name, val> pair
@@ -17,12 +51,13 @@
 //					 of the subset the data was defined in.
 // By using properties you open your system up to a generic key/value system
 // using generic - yet powerful and strongly typed concepts.
-template <class T>
-class Property {
+template <PropertyAble T>
+class Property : public IProperty {
 public:
+	static constexpr auto key = "Generic Property";
 	// todo: ... make others inherit these from Property
-	Property() noexcept = default;
-	Property(std::string name) : m_name(std::forward<std::string>(name)) {}
+	Property() noexcept : m_dataType({}), m_name("") {}
+	Property(std::string name) : m_dataType({}), m_name(std::forward<std::string>(name)) {}
 	Property(T t) noexcept {
 		m_dataType = std::move(t);
 	}
@@ -55,8 +90,10 @@ public:
 		return t == this->data();
 	}
 
-	[[nodiscard]] const std::string& name() const { return m_name; }
+	[[nodiscard]] const std::string& name() const noexcept override { return m_name; }
 	[[nodiscard]] const T data() const { return std::move(std::get<T>(m_dataType)); }
+
+	virtual [[nodiscard]] std::string typeName() const noexcept override { return Property::key; }
 
 	// I maybe don't like these
 	virtual bool isMutable() const = 0;
@@ -66,8 +103,3 @@ protected:
 	std::variant<T> m_dataType;
 	std::string m_name;
 };
-
-using StringProperty = Property<std::string>;
-using IntProperty = Property<int>;
-using DoubleProperty = Property<double>;
-using FloatProperty = Property<float>;

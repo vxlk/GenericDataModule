@@ -2,12 +2,14 @@
 //
 
 #include "MutableProperty.hpp"
+#include "PropertyContainer.hpp"
 #include <assert.h>
 
 using namespace std;
 
 int main()
-{
+{	
+	struct EZ {};
 	// assignment from T
 	MutableProperty<int> i = 0;
 	assert(i == 0);

@@ -10,10 +10,11 @@
 //
 // History is tracked for every change, and a string reason may (should) be given
 // for the update.
-template <class T>
+template <PropertyAble T>
 class StateProperty : public ImmutableProperty<T> {
 public:
-
+	static constexpr auto key = "State Property";
+	virtual [[nodiscard]] std::string typeName() const noexcept override { return StateProperty::key; }
 	struct State {
 		const T val;
 		const std::string reason;
